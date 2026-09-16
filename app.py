@@ -441,7 +441,7 @@ with st.sidebar:
         "openai/gpt-oss-120b",
         "qwen/qwen3.6-27b"
     ]
-)
+   )
 
     st.divider()
 
