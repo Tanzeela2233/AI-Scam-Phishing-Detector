@@ -434,14 +434,13 @@ with st.sidebar:
         placeholder="Enter your Groq API key"
     )
 
-   model = st.selectbox(
-    "AI Model",
-    [
-        "openai/gpt-oss-20b",
-        "openai/gpt-oss-120b",
-        "qwen/qwen3.6-27b"
-    ]
-   )
+      model = st.selectbox(
+        "AI Model",
+        [
+            "openai/gpt-oss-20b",
+            "openai/gpt-oss-120b"
+        ]
+    )
 
     st.divider()
 
