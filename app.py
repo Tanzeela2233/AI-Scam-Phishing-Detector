@@ -5,9 +5,9 @@ import re
 from urllib.parse import urlparse
 
 
-# ============================================================
+# =========================================================
 # PAGE CONFIG
-# ============================================================
+# =========================================================
 
 st.set_page_config(
     page_title="SentinelAI | Scam & Phishing Detector",
@@ -17,72 +17,252 @@ st.set_page_config(
 )
 
 
-# ============================================================
-# FUNCTIONS
-# ============================================================
+# =========================================================
+# CUSTOM CSS
+# =========================================================
+
+st.markdown("""
+<style>
+
+.stApp {
+    background: #080b12;
+    color: #f1f5f9;
+}
+
+[data-testid="stSidebar"] {
+    background: #0d111b;
+    border-right: 1px solid #1e293b;
+}
+
+[data-testid="stSidebar"] * {
+    color: #e2e8f0;
+}
+
+.block-container {
+    max-width: 1200px;
+    padding-top: 2rem;
+    padding-bottom: 3rem;
+}
+
+/* Brand */
+
+.brand-title {
+    font-size: 25px;
+    font-weight: 800;
+    margin-bottom: 3px;
+}
+
+.brand-subtitle {
+    color: #94a3b8;
+    font-size: 13px;
+    margin-bottom: 25px;
+}
+
+/* Hero */
+
+.hero {
+    background: linear-gradient(135deg, #111827, #0b1220);
+    border: 1px solid #243044;
+    border-radius: 20px;
+    padding: 30px;
+    margin-bottom: 25px;
+}
+
+.hero-title {
+    font-size: 38px;
+    font-weight: 800;
+    margin-bottom: 5px;
+}
+
+.hero-subtitle {
+    color: #94a3b8;
+    font-size: 16px;
+}
+
+.hero-icon {
+    font-size: 45px;
+    margin-bottom: 5px;
+}
+
+/* Cards */
+
+.card {
+    background: #101621;
+    border: 1px solid #243044;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 20px;
+}
+
+.card-title {
+    font-size: 21px;
+    font-weight: 700;
+    margin-bottom: 7px;
+}
+
+.card-description {
+    color: #94a3b8;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+/* Metrics */
+
+.metric-card {
+    background: #101621;
+    border: 1px solid #243044;
+    border-radius: 14px;
+    padding: 20px;
+    text-align: center;
+}
+
+.metric-label {
+    color: #94a3b8;
+    font-size: 13px;
+}
+
+.metric-value {
+    font-size: 25px;
+    font-weight: 800;
+    margin-top: 5px;
+}
+
+/* Result */
+
+.result-box {
+    background: #0d1420;
+    border: 1px solid #293548;
+    border-radius: 16px;
+    padding: 25px;
+    margin-top: 20px;
+}
+
+.red-flag {
+    background: #24141a;
+    border-left: 4px solid #ef4444;
+    padding: 12px 15px;
+    border-radius: 7px;
+    margin-bottom: 8px;
+}
+
+.info-box {
+    background: #101c2d;
+    border-left: 4px solid #3b82f6;
+    padding: 15px;
+    border-radius: 7px;
+    line-height: 1.6;
+}
+
+.warning-box {
+    background: #211b0d;
+    border-left: 4px solid #f59e0b;
+    padding: 15px;
+    border-radius: 7px;
+}
+
+/* Footer */
+
+.footer {
+    text-align: center;
+    color: #64748b;
+    font-size: 12px;
+    padding-top: 30px;
+}
+
+/* Buttons */
+
+.stButton > button {
+    border-radius: 9px;
+    font-weight: 600;
+    min-height: 45px;
+}
+
+/* Text area */
+
+textarea {
+    background-color: #0b111b !important;
+    color: #f8fafc !important;
+}
+
+/* Input */
+
+input {
+    background-color: #0b111b !important;
+    color: #f8fafc !important;
+}
+
+</style>
+""", unsafe_allow_html=True)
+
+
+# =========================================================
+# URL INSPECTION
+# =========================================================
 
 def inspect_url(url):
 
-    if not url.startswith(("http://", "https://")):
-        url = "https://" + url
+    original_url = url.strip()
 
-    try:
-        parsed = urlparse(url)
-        hostname = parsed.hostname or ""
+    if not original_url:
+        return {}
 
-        suspicious_keywords = [
-            "login",
-            "verify",
-            "verification",
-            "account",
-            "secure",
-            "update",
-            "password",
-            "bank",
-            "wallet",
-            "payment",
-            "bonus",
-            "reward",
-            "claim",
-            "signin",
-            "confirm"
-        ]
+    normalized_url = original_url
 
-        keyword_matches = [
-            word
-            for word in suspicious_keywords
-            if word in url.lower()
-        ]
+    if not normalized_url.startswith(("http://", "https://")):
+        normalized_url = "http://" + normalized_url
 
-        looks_like_ip = bool(
-            re.match(
-                r"^\d{1,3}(\.\d{1,3}){3}$",
-                hostname
-            )
+    parsed = urlparse(normalized_url)
+
+    hostname = parsed.hostname or ""
+
+    suspicious_words = [
+        "login",
+        "verify",
+        "verification",
+        "account",
+        "secure",
+        "update",
+        "password",
+        "bank",
+        "wallet",
+        "payment",
+        "bonus",
+        "reward",
+        "claim",
+        "signin",
+        "confirm",
+        "security"
+    ]
+
+    found_words = [
+        word for word in suspicious_words
+        if word in original_url.lower()
+    ]
+
+    ip_address = bool(
+        re.match(
+            r"^\d{1,3}(\.\d{1,3}){3}$",
+            hostname
         )
+    )
 
-        return {
-            "normalized_url": url,
-            "domain": hostname,
-            "https": parsed.scheme == "https",
-            "url_length": len(url),
-            "subdomains": max(
-                0,
-                len(hostname.split(".")) - 2
-            ),
-            "looks_like_ip": looks_like_ip,
-            "suspicious_keywords": keyword_matches,
-            "has_at_symbol": "@" in url,
-            "has_many_hyphens": hostname.count("-") >= 3
-        }
+    subdomains = hostname.count(".")
 
-    except Exception:
+    return {
+        "hostname": hostname,
+        "https": normalized_url.startswith("https://"),
+        "length": len(original_url),
+        "subdomains": subdomains,
+        "ip_address": ip_address,
+        "at_symbol": "@" in original_url,
+        "many_hyphens": original_url.count("-") >= 3,
+        "suspicious_words": found_words
+    }
 
-        return {
-            "normalized_url": url,
-            "error": "Could not parse URL."
-        }
 
+# =========================================================
+# GROQ AI ANALYSIS
+# =========================================================
 
 def analyze_with_groq(
     api_key,
@@ -92,43 +272,20 @@ def analyze_with_groq(
     url_info=None
 ):
 
-    if content_type == "message":
-
-        task = f"""
-Analyze the following message for scam/phishing risk.
-
-MESSAGE:
-{content}
-"""
-
-    else:
-
-        task = f"""
-Analyze the following URL for possible phishing/scam risk.
-
-URL:
-{content}
-
-URL STRUCTURAL INFORMATION:
-{json.dumps(url_info, indent=2)}
-"""
+    if not api_key:
+        return {
+            "error": "Please enter your Groq API key in the sidebar."
+        }
 
     system_prompt = """
-You are SentinelAI, a cybersecurity threat-analysis assistant.
+You are SentinelAI, an AI cybersecurity assistant specialized
+in detecting scams, phishing, social engineering and suspicious URLs.
 
-Analyze user-provided messages or URLs for:
-
-- scams
-- phishing
-- spam
-- impersonation
-- fraud
-- social engineering
-- suspicious URLs
+Analyze the provided content carefully.
 
 Return ONLY valid JSON.
 
-Use exactly this structure:
+Use this exact structure:
 
 {
   "risk_level": "HIGH",
@@ -144,12 +301,12 @@ Use exactly this structure:
 
 Rules:
 
-1. risk_level must be exactly:
-HIGH, MEDIUM, or LOW.
+risk_level must be one of:
+HIGH, MEDIUM, LOW
 
-2. risk_score must be an integer from 0 to 100.
+risk_score must be an integer from 0 to 100.
 
-3. category should be one of:
+category should be one of:
 Phishing
 Scam
 Spam
@@ -159,434 +316,122 @@ Job Scam
 Financial Scam
 Other
 
-4. Give 2-5 concise red flags when appropriate.
+red_flags must be a list of short points.
 
-5. Explain the decision using observable characteristics.
+Do not request passwords, OTPs, credit card numbers,
+or other sensitive information.
 
-6. Do not claim certainty when evidence is uncertain.
+Do not visit or execute any provided URL.
 
-7. Never ask the user for passwords, OTPs, API keys,
-credit-card numbers, or other secrets.
-
-8. Never visit or execute URLs.
-
-9. Keep explanations concise.
-
-10. Return ONLY JSON.
-Do not use markdown.
+Base your assessment only on the content provided.
 """
 
-    headers = {
-        "Authorization": f"Bearer {api_key}",
-        "Content-Type": "application/json"
-    }
+    user_prompt = f"""
+Content type: {content_type}
 
-    payload = {
-        "model": model,
-        "messages": [
-            {
-                "role": "system",
-                "content": system_prompt
-            },
-            {
-                "role": "user",
-                "content": task
-            }
-        ],
-        "temperature": 0.2,
-        "max_tokens": 700
-    }
+Content:
+
+{content}
+"""
+
+    if url_info:
+        user_prompt += f"""
+
+Technical URL indicators:
+
+{json.dumps(url_info, indent=2)}
+"""
 
     try:
 
         response = requests.post(
             "https://api.groq.com/openai/v1/chat/completions",
-            headers=headers,
-            json=payload,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json"
+            },
+            json={
+                "model": model,
+                "temperature": 0.1,
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": system_prompt
+                    },
+                    {
+                        "role": "user",
+                        "content": user_prompt
+                    }
+                ]
+            },
             timeout=60
         )
 
         if response.status_code != 200:
-
-            try:
-
-                error_message = (
-                    response
-                    .json()
-                    .get("error", {})
-                    .get("message", response.text)
-                )
-
-            except Exception:
-
-                error_message = response.text
-
-            st.error(
-                f"Groq API error ({response.status_code}): "
-                f"{error_message}"
-            )
-
-            return None
+            return {
+                "error": f"Groq API error: {response.status_code}\n{response.text}"
+            }
 
         data = response.json()
 
-        ai_content = (
-            data["choices"][0]["message"]["content"]
-            .strip()
-        )
+        result = data["choices"][0]["message"]["content"]
 
-        if ai_content.startswith("```"):
+        result = result.strip()
 
-            ai_content = re.sub(
-                r"^```(?:json)?",
+        # Remove markdown JSON fences if model adds them
+
+        if result.startswith("```"):
+            result = re.sub(
+                r"```json|```",
                 "",
-                ai_content
-            )
-
-            ai_content = re.sub(
-                r"```$",
-                "",
-                ai_content
+                result
             ).strip()
 
-        return json.loads(ai_content)
-
-    except requests.exceptions.Timeout:
-
-        st.error(
-            "The AI request timed out. Please try again."
-        )
-
-        return None
+        return json.loads(result)
 
     except json.JSONDecodeError:
 
-        st.error(
-            "The AI returned an unexpected response. "
-            "Please try again."
-        )
+        return {
+            "error": "The AI returned an invalid response. Please try again."
+        }
 
-        return None
+    except requests.exceptions.Timeout:
+
+        return {
+            "error": "The request timed out. Please try again."
+        }
 
     except Exception as e:
 
-        st.error(
-            f"Something went wrong: {e}"
-        )
-
-        return None
+        return {
+            "error": f"Something went wrong: {str(e)}"
+        }
 
 
-# ============================================================
-# CUSTOM CSS
-# ============================================================
-
-st.markdown(
-    """
-    <style>
-
-    /* =========================
-       GLOBAL
-       ========================= */
-
-    .stApp {
-        background:
-            radial-gradient(
-                circle at 15% 5%,
-                rgba(99,102,241,0.13),
-                transparent 28%
-            ),
-            radial-gradient(
-                circle at 90% 15%,
-                rgba(6,182,212,0.09),
-                transparent 28%
-            ),
-            #070a11;
-    }
-
-    .block-container {
-        max-width: 1200px;
-        padding-top: 35px;
-        padding-bottom: 50px;
-    }
-
-    /* =========================
-       SIDEBAR
-       ========================= */
-
-    section[data-testid="stSidebar"] {
-        background: #0b0f18;
-        border-right: 1px solid #202838;
-    }
-
-    section[data-testid="stSidebar"] .block-container {
-        padding-top: 25px;
-    }
-
-    /* =========================
-       HERO
-       ========================= */
-
-    .hero-wrapper {
-        padding: 10px 0 35px 0;
-    }
-
-    .hero {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-    }
-
-    .hero-icon {
-        width: 58px;
-        height: 58px;
-        border-radius: 17px;
-
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        background:
-            linear-gradient(
-                135deg,
-                #6366f1,
-                #06b6d4
-            );
-
-        font-size: 30px;
-
-        box-shadow:
-            0 10px 35px
-            rgba(99,102,241,0.28);
-    }
-
-    .hero-title {
-        font-size: 40px;
-        font-weight: 800;
-        line-height: 1;
-        letter-spacing: -1.5px;
-        color: #f8fafc;
-    }
-
-    .hero-subtitle {
-        margin-top: 9px;
-        color: #94a3b8;
-        font-size: 14px;
-    }
-
-    /* =========================
-       CARDS
-       ========================= */
-
-    .glass-card {
-        background: rgba(15,23,42,0.72);
-        border: 1px solid #263244;
-        border-radius: 18px;
-        padding: 23px;
-        margin-bottom: 18px;
-        box-shadow:
-            0 15px 40px
-            rgba(0,0,0,0.20);
-    }
-
-    .card-heading {
-        color: #f8fafc;
-        font-size: 18px;
-        font-weight: 750;
-        margin-bottom: 5px;
-    }
-
-    .card-description {
-        color: #94a3b8;
-        font-size: 13px;
-        line-height: 1.6;
-        margin-bottom: 18px;
-    }
-
-    /* =========================
-       METRICS
-       ========================= */
-
-    .metric {
-        background: #0d1421;
-        border: 1px solid #263449;
-        border-radius: 16px;
-        padding: 20px;
-        min-height: 110px;
-    }
-
-    .metric-label {
-        color: #7f8da3;
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.8px;
-    }
-
-    .metric-value {
-        color: #f8fafc;
-        font-size: 25px;
-        font-weight: 800;
-        margin-top: 8px;
-    }
-
-    /* =========================
-       RED FLAGS
-       ========================= */
-
-    .red-flag {
-        background: #0d1421;
-        border: 1px solid #273449;
-        border-radius: 12px;
-        padding: 12px 14px;
-        margin-bottom: 9px;
-        color: #dbe4f0;
-        font-size: 13px;
-        line-height: 1.5;
-    }
-
-    /* =========================
-       INFO
-       ========================= */
-
-    .recommendation {
-        background: rgba(59,130,246,0.08);
-        border: 1px solid rgba(59,130,246,0.25);
-        border-radius: 13px;
-        padding: 16px;
-        color: #dbeafe;
-        font-size: 14px;
-        line-height: 1.6;
-    }
-
-    /* =========================
-       SIDEBAR BRAND
-       ========================= */
-
-    .sidebar-brand {
-        padding-bottom: 20px;
-    }
-
-    .sidebar-title {
-        color: #f8fafc;
-        font-size: 22px;
-        font-weight: 800;
-    }
-
-    .sidebar-subtitle {
-        color: #64748b;
-        font-size: 12px;
-        margin-top: 4px;
-    }
-
-    .sidebar-section {
-        color: #94a3b8;
-        font-size: 11px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.8px;
-        margin-top: 22px;
-        margin-bottom: 10px;
-    }
-
-    /* =========================
-       FOOTER
-       ========================= */
-
-    .footer {
-        text-align: center;
-        color: #566277;
-        font-size: 12px;
-        padding: 35px 0 10px;
-        line-height: 1.7;
-    }
-
-    /* =========================
-       BUTTONS
-       ========================= */
-
-    .stButton > button {
-        border-radius: 11px;
-        border: 1px solid #313d52;
-        background: #111827;
-        color: #e5e7eb;
-        font-weight: 700;
-        min-height: 42px;
-        transition: all 0.2s ease;
-    }
-
-    .stButton > button:hover {
-        border-color: #6366f1;
-        color: white;
-        background: #161d2d;
-    }
-
-    /* =========================
-       TEXT INPUT
-       ========================= */
-
-    input,
-    textarea {
-        background-color: #0b1220 !important;
-        color: #f8fafc !important;
-    }
-
-    /* =========================
-       TABS
-       ========================= */
-
-    button[data-baseweb="tab"] {
-        font-weight: 700;
-        font-size: 14px;
-    }
-
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
-
-# ============================================================
-# SESSION STATE
-# ============================================================
-
-if "analysis" not in st.session_state:
-    st.session_state.analysis = None
-
-
-# ============================================================
+# =========================================================
 # SIDEBAR
-# ============================================================
+# =========================================================
 
 with st.sidebar:
 
     st.markdown(
-        """
-        <div class="sidebar-brand">
-
-            <div class="sidebar-title">
-                🛡️ SentinelAI
-            </div>
-
-            <div class="sidebar-subtitle">
-                Scam & Phishing Intelligence
-            </div>
-
-        </div>
-        """,
+        '<div class="brand-title">🛡️ SentinelAI</div>',
         unsafe_allow_html=True
     )
 
     st.markdown(
-        '<div class="sidebar-section">AI Configuration</div>',
+        '<div class="brand-subtitle">Scam & Phishing Intelligence</div>',
         unsafe_allow_html=True
     )
+
+    st.divider()
+
+    st.subheader("⚙️ AI Configuration")
 
     api_key = st.text_input(
         "Groq API Key",
         type="password",
-        placeholder="gsk_...",
-        help="Used only during this session."
+        placeholder="Enter your Groq API key"
     )
 
     model = st.selectbox(
@@ -597,195 +442,160 @@ with st.sidebar:
         ]
     )
 
-    st.markdown(
-        '<div class="sidebar-section">Detection Signals</div>',
-        unsafe_allow_html=True
-    )
+    st.divider()
 
-    st.markdown(
-        """
-        🚨 Urgency & pressure<br>
-        🔗 Suspicious URLs<br>
-        🔐 Credential requests<br>
-        💰 Financial manipulation<br>
-        🎁 Fake rewards<br>
-        👤 Impersonation<br>
-        📱 Social engineering
-        """,
-        unsafe_allow_html=True
-    )
+    st.subheader("🔎 Detection Signals")
 
-    st.markdown(
-        '<div class="sidebar-section">Privacy</div>',
-        unsafe_allow_html=True
-    )
+    signals = [
+        "🚨 Urgency & pressure",
+        "🔗 Suspicious URLs",
+        "🔐 Credential requests",
+        "💰 Financial manipulation",
+        "🎁 Fake rewards",
+        "👤 Impersonation",
+        "📱 Social engineering"
+    ]
 
-    st.info(
+    for signal in signals:
+        st.write(signal)
+
+    st.divider()
+
+    st.subheader("🔒 Privacy")
+
+    st.caption(
         "Do not enter real passwords, OTPs, "
-        "credit-card numbers, or other sensitive "
-        "information."
+        "credit-card numbers, or other sensitive information."
     )
 
 
-# ============================================================
+# =========================================================
 # HERO
-# ============================================================
+# =========================================================
 
 st.markdown(
-    """
-    <div class="hero-wrapper">
-
-        <div class="hero">
-
-            <div class="hero-icon">
-                🛡️
-            </div>
-
-            <div>
-
-                <div class="hero-title">
-                    SentinelAI
-                </div>
-
-                <div class="hero-subtitle">
-                    Intelligent scam and phishing detection
-                    powered by Generative AI
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-    """,
+    '<div class="hero-icon">🛡️</div>',
     unsafe_allow_html=True
 )
 
+st.markdown(
+    '<div class="hero-title">SentinelAI</div>',
+    unsafe_allow_html=True
+)
 
-# ============================================================
+st.markdown(
+    '<div class="hero-subtitle">'
+    'Intelligent scam and phishing detection powered by Generative AI'
+    '</div>',
+    unsafe_allow_html=True
+)
+
+st.write("")
+
+
+# =========================================================
 # TABS
-# ============================================================
+# =========================================================
 
 message_tab, url_tab = st.tabs(
-    [
-        "💬 Message Scanner",
-        "🔗 URL Scanner"
-    ]
+    ["💬 Message Scanner", "🔗 URL Scanner"]
 )
 
 
-# ============================================================
-# MESSAGE TAB
-# ============================================================
+# =========================================================
+# MESSAGE SCANNER
+# =========================================================
 
 with message_tab:
 
     st.markdown(
-        """
-        <div class="glass-card">
-
-            <div class="card-heading">
-                🔍 Analyze a suspicious message
-            </div>
-
-            <div class="card-description">
-                Analyze SMS messages, emails, WhatsApp messages,
-                job offers, banking alerts, social-media messages,
-                and other suspicious content.
-            </div>
-
-        </div>
-        """,
+        '<div class="card-title">🔍 Analyze a suspicious message</div>',
         unsafe_allow_html=True
     )
+
+    st.markdown(
+        '<div class="card-description">'
+        'Analyze SMS messages, emails, WhatsApp messages, job offers, '
+        'banking alerts, social-media messages, and other suspicious content.'
+        '</div>',
+        unsafe_allow_html=True
+    )
+
+    st.write("")
 
     message = st.text_area(
         "Suspicious message",
         height=220,
         placeholder=(
-            "Paste the suspicious message here..."
+            "Paste a suspicious SMS, email, job offer, "
+            "banking message, or social-media message here..."
         ),
         label_visibility="collapsed"
     )
 
-    col1, col2, col3 = st.columns(
-        [1.2, 1.0, 3.0]
-    )
+    col1, col2 = st.columns([3, 1])
 
     with col1:
 
         analyze_message = st.button(
-            "🔍 Analyze Message",
-            key="message_analyze"
+            "🛡️ Analyze Message",
+            use_container_width=True
         )
 
     with col2:
 
         clear_message = st.button(
-            "↻ Clear",
-            key="message_clear"
+            "Clear",
+            use_container_width=True
         )
 
     if clear_message:
-
-        st.session_state.analysis = None
         st.rerun()
 
     if analyze_message:
 
         if not message.strip():
 
-            st.warning(
-                "Please paste a message first."
-            )
+            st.warning("Please enter a message first.")
 
         elif not api_key:
 
-            st.warning(
-                "Enter your Groq API key in the sidebar."
-            )
+            st.error("Please enter your Groq API key in the sidebar.")
 
         else:
 
-            with st.spinner(
-                "🧠 SentinelAI is analyzing the message..."
-            ):
+            with st.spinner("SentinelAI is analyzing the message..."):
 
                 result = analyze_with_groq(
                     api_key,
                     model,
                     message,
-                    "message"
+                    "Suspicious message"
                 )
 
-                if result:
-
-                    st.session_state.analysis = result
+            st.session_state["analysis"] = result
 
 
-# ============================================================
-# URL TAB
-# ============================================================
+# =========================================================
+# URL SCANNER
+# =========================================================
 
 with url_tab:
 
     st.markdown(
-        """
-        <div class="glass-card">
-
-            <div class="card-heading">
-                🔗 Analyze a suspicious URL
-            </div>
-
-            <div class="card-description">
-                Inspect the structure of a URL and use AI
-                to identify possible phishing indicators.
-            </div>
-
-        </div>
-        """,
+        '<div class="card-title">🔗 Inspect a suspicious URL</div>',
         unsafe_allow_html=True
     )
+
+    st.markdown(
+        '<div class="card-description">'
+        'Check a URL for suspicious structural indicators and let AI '
+        'assess the potential risk.'
+        '</div>',
+        unsafe_allow_html=True
+    )
+
+    st.write("")
 
     url = st.text_input(
         "Suspicious URL",
@@ -793,414 +603,220 @@ with url_tab:
         label_visibility="collapsed"
     )
 
-    col1, col2, col3 = st.columns(
-        [1.2, 1.0, 3.0]
-    )
+    col1, col2 = st.columns([3, 1])
 
     with col1:
 
-        analyze_url = st.button(
-            "🔗 Analyze URL",
-            key="url_analyze"
+        analyze_url_button = st.button(
+            "🔍 Analyze URL",
+            use_container_width=True
         )
 
     with col2:
 
         clear_url = st.button(
-            "↻ Clear",
-            key="url_clear"
+            "Clear",
+            use_container_width=True,
+            key="clear_url"
         )
 
     if clear_url:
-
-        st.session_state.analysis = None
         st.rerun()
 
-    if analyze_url:
+    if analyze_url_button:
 
         if not url.strip():
 
-            st.warning(
-                "Please enter a URL first."
-            )
+            st.warning("Please enter a URL first.")
 
         elif not api_key:
 
-            st.warning(
-                "Enter your Groq API key in the sidebar."
-            )
+            st.error("Please enter your Groq API key in the sidebar.")
 
         else:
 
             url_info = inspect_url(url)
 
-            with st.spinner(
-                "🧠 SentinelAI is analyzing the URL..."
-            ):
+            with st.spinner("SentinelAI is inspecting the URL..."):
 
                 result = analyze_with_groq(
                     api_key,
                     model,
                     url,
-                    "url",
+                    "URL",
                     url_info
                 )
 
-                if result:
-
-                    st.session_state.analysis = result
+            st.session_state["analysis"] = result
 
 
-# ============================================================
+# =========================================================
 # RESULTS
-# ============================================================
+# =========================================================
 
-if st.session_state.analysis:
+if "analysis" in st.session_state:
 
-    result = st.session_state.analysis
+    result = st.session_state["analysis"]
 
-    st.markdown("---")
+    st.divider()
 
-    st.markdown(
-        """
-        <div style="margin:25px 0 18px;">
+    st.subheader("📊 Analysis Result")
 
-            <div style="
-                font-size:26px;
-                font-weight:800;
-                color:#f8fafc;
-            ">
-                📊 Security Analysis
-            </div>
+    if "error" in result:
 
-            <div style="
-                color:#64748b;
-                font-size:13px;
-                margin-top:5px;
-            ">
-                AI-generated assessment of the submitted content.
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    risk = str(
-        result.get(
-            "risk_level",
-            "LOW"
-        )
-    ).upper()
-
-    try:
-
-        score = int(
-            result.get(
-                "risk_score",
-                0
-            )
-        )
-
-    except Exception:
-
-        score = 0
-
-    score = max(
-        0,
-        min(100, score)
-    )
-
-    category = result.get(
-        "category",
-        "Other"
-    )
-
-    summary = result.get(
-        "summary",
-        "No explanation available."
-    )
-
-    recommendation = result.get(
-        "recommendation",
-        "Verify the information through a trusted official channel."
-    )
-
-    if risk == "HIGH":
-
-        risk_icon = "🔴"
-        risk_text = "HIGH RISK"
-
-    elif risk == "MEDIUM":
-
-        risk_icon = "🟠"
-        risk_text = "MEDIUM RISK"
+        st.error(result["error"])
 
     else:
 
-        risk_icon = "🟢"
-        risk_text = "LOW RISK"
+        risk_level = str(
+            result.get("risk_level", "UNKNOWN")
+        ).upper()
 
-
-    # ========================================================
-    # METRICS
-    # ========================================================
-
-    c1, c2, c3 = st.columns(3)
-
-    with c1:
-
-        st.markdown(
-            f"""
-            <div class="metric">
-
-                <div class="metric-label">
-                    Risk Level
-                </div>
-
-                <div class="metric-value">
-                    {risk_icon} {risk}
-                </div>
-
-            </div>
-            """,
-            unsafe_allow_html=True
+        risk_score = int(
+            result.get("risk_score", 0)
         )
 
-    with c2:
-
-        st.markdown(
-            f"""
-            <div class="metric">
-
-                <div class="metric-label">
-                    Risk Score
-                </div>
-
-                <div class="metric-value">
-                    {score}/100
-                </div>
-
-            </div>
-            """,
-            unsafe_allow_html=True
+        category = result.get(
+            "category",
+            "Unknown"
         )
 
-    with c3:
+        # -------------------------------------------------
+        # METRICS
+        # -------------------------------------------------
 
-        st.markdown(
-            f"""
-            <div class="metric">
+        col1, col2, col3 = st.columns(3)
 
-                <div class="metric-label">
-                    Category
-                </div>
+        with col1:
 
-                <div class="metric-value"
-                     style="font-size:21px;">
+            st.metric(
+                "Risk Level",
+                risk_level
+            )
 
-                    {category}
+        with col2:
 
-                </div>
+            st.metric(
+                "Risk Score",
+                f"{risk_score}/100"
+            )
 
-            </div>
-            """,
-            unsafe_allow_html=True
+        with col3:
+
+            st.metric(
+                "Category",
+                category
+            )
+
+        st.write("")
+
+        # -------------------------------------------------
+        # PROGRESS
+        # -------------------------------------------------
+
+        st.progress(
+            min(max(risk_score, 0), 100) / 100,
+            text=f"Risk score: {risk_score}/100"
         )
 
+        # -------------------------------------------------
+        # RISK MESSAGE
+        # -------------------------------------------------
 
-    st.markdown("<br>", unsafe_allow_html=True)
+        if risk_level == "HIGH":
 
+            st.error(
+                "🚨 HIGH RISK — This content contains strong "
+                "indicators of a scam or phishing attempt."
+            )
 
-    # ========================================================
-    # RISK CARD
-    # ========================================================
+        elif risk_level == "MEDIUM":
 
-    st.markdown(
-        f"""
-        <div class="glass-card">
+            st.warning(
+                "⚠️ MEDIUM RISK — This content contains "
+                "some suspicious indicators."
+            )
 
-            <div style="
-                display:flex;
-                justify-content:space-between;
-                align-items:center;
-            ">
+        else:
 
-                <div>
+            st.success(
+                "✅ LOW RISK — No major scam indicators "
+                "were identified."
+            )
 
-                    <div style="
-                        color:#f8fafc;
-                        font-size:28px;
-                        font-weight:800;
-                    ">
-                        {risk_icon} {risk_text}
-                    </div>
+        # -------------------------------------------------
+        # RED FLAGS
+        # -------------------------------------------------
 
-                    <div style="
-                        color:#64748b;
-                        margin-top:5px;
-                        font-size:13px;
-                    ">
-                        AI assessment score
-                    </div>
+        st.subheader("🚩 Detected Red Flags")
 
-                </div>
-
-                <div style="
-                    font-size:32px;
-                    font-weight:800;
-                    color:#f8fafc;
-                ">
-                    {score}
-                </div>
-
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    # Progress bar
-
-    st.progress(
-        score / 100,
-        text=f"Risk score: {score}/100"
-    )
-
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-
-    # ========================================================
-    # DETAILS
-    # ========================================================
-
-    left, right = st.columns(2)
-
-    with left:
-
-        st.markdown(
-            """
-            <div class="glass-card">
-
-                <div class="card-heading">
-                    🚩 Detected Red Flags
-                </div>
-
-                <div class="card-description">
-                    Suspicious indicators identified by SentinelAI.
-                </div>
-
-            """,
-            unsafe_allow_html=True
-        )
-
-        flags = result.get(
+        red_flags = result.get(
             "red_flags",
             []
         )
 
-        if isinstance(flags, str):
+        if red_flags:
 
-            flags = [flags]
+            for flag in red_flags:
 
-        if not flags:
+                st.markdown(
+                    f"""
+                    <div class="red-flag">
+                    🚩 {flag}
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
 
-            flags = [
-                "No specific red flags identified."
-            ]
+        else:
 
-        for flag in flags:
+            st.info("No specific red flags were identified.")
 
-            st.markdown(
-                f"""
-                <div class="red-flag">
-                    ⚠️ &nbsp; {flag}
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
+        # -------------------------------------------------
+        # EXPLANATION
+        # -------------------------------------------------
 
-        st.markdown(
-            "</div>",
-            unsafe_allow_html=True
-        )
-
-
-    with right:
+        st.subheader("🧠 AI Explanation")
 
         st.markdown(
             f"""
-            <div class="glass-card">
+            <div class="info-box">
+            {result.get("summary", "No explanation available.")}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
-                <div class="card-heading">
-                    🧠 AI Explanation
-                </div>
+        # -------------------------------------------------
+        # RECOMMENDATION
+        # -------------------------------------------------
 
-                <div class="card-description">
-                    Why the content received this assessment.
-                </div>
+        st.subheader("🛡️ Recommended Action")
 
-                <div style="
-                    color:#cbd5e1;
-                    font-size:14px;
-                    line-height:1.8;
-                ">
-                    {summary}
-                </div>
-
+        st.markdown(
+            f"""
+            <div class="warning-box">
+            {result.get("recommendation", "Exercise caution.")}
             </div>
             """,
             unsafe_allow_html=True
         )
 
 
-    # ========================================================
-    # RECOMMENDATION
-    # ========================================================
-
-    st.markdown(
-        f"""
-        <div class="glass-card">
-
-            <div class="card-heading">
-                🛡️ Recommended Action
-            </div>
-
-            <div class="card-description">
-                Suggested safety steps based on the analysis.
-            </div>
-
-            <div class="recommendation">
-                <b>Safety recommendation</b><br><br>
-                {recommendation}
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-
-# ============================================================
+# =========================================================
 # FOOTER
-# ============================================================
+# =========================================================
+
+st.markdown("---")
 
 st.markdown(
     """
     <div class="footer">
-
-        🛡️ <b>SentinelAI</b>
-        &nbsp;•&nbsp;
+        🛡️ SentinelAI &nbsp;•&nbsp;
         AI Scam & Phishing Detector
-
-        <br>
-
+        <br><br>
         AI analysis may occasionally be incorrect.
-        Always verify suspicious communications
-        through trusted official channels.
-
+        Always verify suspicious communications through trusted official channels.
     </div>
     """,
     unsafe_allow_html=True
