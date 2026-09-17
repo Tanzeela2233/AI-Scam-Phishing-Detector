@@ -36,7 +36,7 @@
      └────┬────┘
           ▼
    🛡️ Safety Advice
-
+```
 
 ## 🛠️ Tech Stack
 
