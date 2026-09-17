@@ -434,7 +434,7 @@ with st.sidebar:
         placeholder="Enter your Groq API key"
     )
 
-      model = st.selectbox(
+    model = st.selectbox(
         "AI Model",
         [
             "openai/gpt-oss-20b",
