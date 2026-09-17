@@ -37,6 +37,7 @@
           ▼
    🛡️ Safety Advice
 
+
 ## 🛠️ Tech Stack
 
 | Technology | Purpose |
@@ -45,7 +46,7 @@
 | 🎨 Streamlit | Web interface |
 | 🤖 Groq API | GenAI inference |
 | 🧠 OpenAI GPT-OSS 20B | AI analysis |
-| 🧠 OpenAI GPT-OSS 120B | AI analysis |
+ | 🧠 OpenAI GPT-OSS 120B | AI analysis |
 | 🌐 URL Parsing | URL inspection |
 | 📡 Requests | API communication |
 | ☁️ Streamlit Cloud | Deployment |
